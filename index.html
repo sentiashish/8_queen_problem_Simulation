@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>8 Queens - KJSOE DAA Project</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            padding: 20px;
+            background: #e79b95;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .header {
+            border: 2px solid #2c3e50;
+            padding: 20px;
+            margin-bottom: 25px;
+            background: rgb(231, 45, 45);
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            gap: 0;
+            border: 2px solid #2c3e50;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ddd;
+            text-align: center;
+            font-size: 35px;
+            background: #fff;
+            transition: background 0.3s;
+        }
+
+        .cell:nth-child(2n) {
+            background: #f0f0f0;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        #startBtn {
+            background: #27ae60;
+            color: white;
+        }
+
+        #pauseBtn {
+            background: #f39c12;
+            color: white;
+        }
+
+        #resetBtn {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .status {
+            margin: 15px 0;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            margin: 0 10px;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>K.J. Somaiya School of Engineering</h2>
+        <h3>Analysis of Algorithms IA-2</h3>
+        <p><strong>Group Members:</strong><br>
+        Ashish Kumar (16010123084)<br>
+        Guneesh Singh (16010123128)<br>
+        Harsh Sah (16010123140)</p>
+        
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <button id="startBtn" onclick="start()">Start</button>
+            <button id="pauseBtn" onclick="togglePause()">Pause/Resume</button>
+            <button id="resetBtn" onclick="reset()">Reset</button>
+            <div>
+                Speed: 
+                <input type="range" id="speed" min="100" max="1000" value="300">
+                <span id="speedValue">300ms</span>
+            </div>
+        </div>
+
+        <div class="status">
+            Attempts: <span id="attempts">0</span> | 
+            Backtracks: <span id="backtracks">0</span>
+        </div>
+
+        <div id="board" class="board"></div>
+    </div>
+
+    <script>
+        // Basic 8 Queens solver with backtracking visualization
+        let board = [];
+        let solving = false;
+        let paused = false;
+        let attempts = 0;
+        let backtracks = 0;
+        let speed = 300;
+
+        // Initialize board
+        function initBoard() {
+            const container = document.getElementById('board');
+            container.innerHTML = '';
+            board = Array(8).fill().map(() => Array(8).fill(0));
+            
+            for(let i=0; i<8; i++) {
+                for(let j=0; j<8; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${i}-${j}`;
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        // Check if position is safe
+        function isSafe(row, col) {
+            // Check column
+            for(let i=0; i<row; i++) {
+                if(board[i][col]) return false;
+            }
+            
+            // Check left diagonal
+            for(let i=row-1, j=col-1; i>=0 && j>=0; i--, j--) {
+                if(board[i][j]) return false;
+            }
+            
+            // Check right diagonal
+            for(let i=row-1, j=col+1; i>=0 && j<8; i--, j++) {
+                if(board[i][j]) return false;
+            }
+            
+            return true;
+        }
+
+        // Main solver function
+        async function solve(row = 0) {
+            if(row === 8) return true;
+            
+            for(let col=0; col<8; col++) {
+                if(!solving) return false;
+                
+                while(paused) {
+                    await new Promise(r => setTimeout(r, 100));
+                }
+                
+                attempts++;
+                document.getElementById('attempts').textContent = attempts;
+                const cell = document.getElementById(`cell-${row}-${col}`);
+                cell.textContent = '♛';
+                cell.style.color = '#2c3e50';
+                
+                await new Promise(r => setTimeout(r, speed));
+                
+                if(isSafe(row, col)) {
+                    board[row][col] = 1;
+                    if(await solve(row + 1)) return true;
+                    board[row][col] = 0;
+                }
+                
+                backtracks++;
+                document.getElementById('backtracks').textContent = backtracks;
+                cell.textContent = '';
+            }
+            return false;
+        }
+
+        // Control functions
+        function start() {
+            if(!solving) {
+                solving = true;
+                paused = false;
+                solve();
+            }
+        }
+
+        function togglePause() {
+            paused = !paused;
+        }
+
+        function reset() {
+            solving = false;
+            paused = false;
+            attempts = 0;
+            backtracks = 0;
+            document.getElementById('attempts').textContent = '0';
+            document.getElementById('backtracks').textContent = '0';
+            initBoard();
+        }
+
+        // Initialize on load
+        document.getElementById('speed').addEventListener('input', (e) => {
+            speed = 1000 - e.target.value;
+            document.getElementById('speedValue').textContent = `${speed}ms`;
+        });
+        
+        window.onload = initBoard;
+    </script>
+</body>
+</html>
